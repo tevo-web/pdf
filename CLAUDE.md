@@ -13,8 +13,10 @@ that way; do not add any feature that sends document content to a server.
   - `js/pdf.min.js`, `js/pdf.worker.min.js`: pdf.js 3.11.174 (UMD, global `pdfjsLib`). Renders pages and extracts text.
   - `js/pdf-lib.min.js`: pdf-lib 1.17.1 (global `PDFLib`). Writes the output PDF.
   - `js/fontkit.umd.min.js`: @pdf-lib/fontkit 1.1.1 (global `fontkit`). Embeds TTF fonts.
-  - `js/fonts.js`: `window.PB_FONTS`, base64 TTFs for Arimo, Tinos, Cousine
-    (regular/italic/bold/bold-italic), subset to Latin + Vietnamese. Rebuild with `tools/subset-fonts.sh`.
+  - `js/fonts.js`: `window.PB_FONTS`, base64 TTFs keyed `times` (Tinos), `helv` (Arimo), `calibri` (Carlito),
+    `cour` (Cousine); regular/italic/bold/bold-italic, subset to Latin + Vietnamese. These are metric-compatible
+    with Times New Roman, Arial, Calibri and Courier New, and the UI shows the Microsoft names.
+    Rebuild with `tools/subset-fonts.sh`. (Caladea/Cambria is not included: it lacks Vietnamese glyphs.)
   - `_headers`: security headers, CSP and caching.
   - `licenses/`: third-party notices. Must ship with the site.
 - Other files at repo root are not deployed.
@@ -31,8 +33,15 @@ that way; do not add any feature that sends document content to a server.
 - Text: `measure(o)` uses canvas metrics of the embedded font to get width, line height (1.2 × size)
   and baseline offset. The same numbers drive on-screen layout and export, so they must stay in sync.
   Export uses the embedded Unicode font; it falls back to a PNG only if a glyph is missing.
-- "Edit text" reads pdf.js `getTextContent()`, places a whiteout over the original run and a new
-  text object on the same baseline. Original content is covered, not removed.
+- "Edit text" first calls `getOperatorList()` so every font object is loaded (otherwise `commonObjs.get`
+  fails and names are unknown; pdf.js reports every font's generic family as `sans-serif`, so never rely on it).
+  Font family comes from the PDF font name (TimesNewRoman/Arial/Calibri/Cambria/…); unknown names fall back to
+  the family whose letter widths best match the original run.
+  `sampleColors()` reads the rendered canvas: background = most common colour around the run (used for the
+  cover box, so shaded table cells keep their fill), ink = colour furthest from it, snapped to the Office palette.
+  Original content is covered, not removed.
+- Colour picker mirrors Word/Excel: theme colours (Office 2013–2022 exact Word table `WORD_O13`, Office 2023+
+  computed), standard colours, recent colours, custom colour and an eyedropper (`pickFor`).
 - History: `snap()` / `record(prev)` store JSON snapshots of `pages` (undo/redo, max 200).
 - Saving: `buildPdf()` copies source pages with pdf-lib, applies rotation, draws objects.
   `savePdf()` uses the Claude artifact `downloads` capability when present, otherwise a blob download.
