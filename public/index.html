@@ -179,6 +179,18 @@ button{cursor:pointer}
 .merr{margin:0;color:var(--danger);font-size:13px;min-height:0}
 .merr:empty{display:none}
 .mfoot{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.fmtgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.fmt{display:grid;grid-template-columns:auto 1fr;grid-template-rows:auto auto;column-gap:10px;align-items:center;text-align:left;border:1px solid var(--line);background:var(--panel);border-radius:8px;padding:10px;cursor:pointer;min-width:0}
+.fmt:hover{background:var(--panel-2)}
+.fmt[aria-checked="true"]{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent-soft)}
+.fmt .badge{grid-row:1/3;width:34px;height:34px;border-radius:6px;color:#fff;font:700 12px/34px var(--sans);text-align:center;letter-spacing:.02em}
+.fmt .fmtname{font-weight:600;font-size:13.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.fmt .fmtext{font-family:var(--mono);font-size:11px;color:var(--muted)}
+.tin.small{padding:4px 8px;font-size:13px;width:140px;font-family:var(--mono)}
+#convOpts select{border:1px solid var(--line);background:var(--panel);border-radius:6px;padding:6px 8px;max-width:100%}
+.prog{height:6px;border-radius:3px;background:var(--panel-2);overflow:hidden}
+.prog .bar{height:100%;width:0;background:var(--accent);transition:width .2s}
+@media (max-width:520px){.fmtgrid{grid-template-columns:repeat(2,1fr)}}
 .app.picking .layer,.app.picking .tspan,.app.picking .obj{cursor:crosshair!important}
 .sw button{width:22px;height:22px;border-radius:50%;border:1px solid var(--line);padding:0}
 .sw button[aria-pressed="true"]{outline:2px solid var(--accent);outline-offset:2px}
@@ -229,6 +241,7 @@ button{cursor:pointer}
       <button class="btn icon" id="zinBtn" data-i18n-aria="zoomIn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M5 12h14M12 5v14"/></svg></button>
     </div>
     <label class="langsel" for="langSel"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.6 2.8 3.8 5.8 3.8 9s-1.2 6.2-3.8 9c-2.6-2.8-3.8-5.8-3.8-9S9.4 5.8 12 3z"/></svg><select id="langSel" data-i18n-aria="language"><option value="en">English</option><option value="vi">Tiếng Việt</option></select></label>
+    <button class="btn" id="convBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h13l-3.5-3.5M20 16H7l3.5 3.5"/></svg><span class="lbl" data-i18n="convert">Convert</span></button>
     <button class="btn primary" id="saveBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v12m-5-5l5 5 5-5"/><path d="M4 19h16"/></svg><span data-i18n="save">Save PDF</span></button>
   </header>
 
@@ -251,6 +264,19 @@ button{cursor:pointer}
   </footer>
 </div>
 <input id="imgIn" class="file-in" type="file" accept="image/png,image/jpeg,image/webp,image/gif">
+<div class="modal" id="convModal" hidden role="dialog" aria-modal="true" aria-labelledby="convTitle">
+  <div class="mbox">
+    <div class="mhead"><h3 id="convTitle" data-i18n="convTitle"></h3><button class="btn icon" id="convClose" data-i18n-aria="cancel"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
+    <div class="fmtgrid" id="convFmts" role="radiogroup" data-i18n-aria="cvFormat"></div>
+    <p class="hint" id="convDesc"></p>
+    <div class="field"><span class="flabel" data-i18n="cvPages"></span>
+      <div class="mrow"><label class="chk"><input type="radio" name="cvRangeMode" value="all" checked><span id="convTotal"></span></label><label class="chk"><input type="radio" name="cvRangeMode" value="custom"><span data-i18n="cvCustom"></span></label><input id="cvRange" class="tin small" type="text" inputmode="numeric" data-i18n-ph="cvRangePh" data-i18n-aria="cvCustom" hidden></div></div>
+    <div id="convOpts"></div>
+    <div id="convProgWrap" hidden><div class="prog"><div class="bar" id="convBar"></div></div><p class="hint small" id="convStatus" role="status"></p></div>
+    <p class="merr" id="convErr" role="alert"></p>
+    <div class="mfoot"><span class="hint small" data-i18n="cvEdits"></span><div class="grp"><button class="btn" id="convCancel" data-i18n="cancel"></button><button class="btn primary" id="convGo" data-i18n="cvGo"></button></div></div>
+  </div>
+</div>
 <div class="modal" id="sigModal" hidden role="dialog" aria-modal="true" aria-labelledby="sigTitle">
   <div class="mbox">
     <div class="mhead"><h3 id="sigTitle" data-i18n="sigTitle"></h3><button class="btn icon" id="sigClose" data-i18n-aria="cancel"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
@@ -302,7 +328,7 @@ const L={
   h_whiteout:'Drag to cover an area with white, or pick another fill to match the page.',h_highlight:'Drag across the line of text you want to highlight.',
   h_rect:'Drag to draw a rectangle. Hold Shift for a square.',h_ellipse:'Drag to draw an ellipse. Hold Shift for a circle.',h_draw:'Drag to draw freehand. Works for signatures too.',
   h_image:'Choose a PNG or JPG image. It is placed on the page you are viewing.',
-  f_times:'Times New Roman',f_helv:'Arial',f_calibri:'Calibri',f_cour:'Courier New',t_sign:'Sign',t_check:'Checkbox',t_symbol:'Symbols',ti_sign:'Signature',ti_check:'Checkbox',ti_symbol:'Symbols',ti_mark:'Mark',h_sign:'Click the page to place your signature. Drag the corner to resize.',h_check:'Click the page to add a mark, for example inside a printed box. Click an existing mark to switch between its styles (✓ ✗ •, or ☑ ☒ ☐ ■).',h_symbol:'Pick a symbol, then click the page to place it. Each click adds one.',markStyle:'Style',size:'Size (pt)',shapes:'Shapes',textSymbols:'Text symbols',savedSigs:'Your signatures',newSig:'New signature',delSig:'Remove signature',sigTitle:'Create signature',sigDraw:'Draw',sigType:'Type',sigUpload:'Upload',sigPadHint:'Sign here with your mouse, trackpad or finger',penColor:'Ink',clear:'Clear',sigNamePh:'Type your name',sigSample:'Your Name',chooseImage:'Choose image',removeBg:'Remove white background',uploadHint:'A photo or scan of your signature on white paper works best.',rememberSig:'Remember on this device',cancel:'Cancel',insertSig:'Insert signature',sigEmpty:'Draw, type or upload a signature first.',sigPlaced:'Signature added. Drag it into place and drag the corner to resize.',mk_check:'Tick',mk_cross:'Cross',mk_dot:'Dot',mk_boxcheck:'Ticked box',mk_boxcross:'Crossed box',mk_box:'Empty box',mk_boxfill:'Filled box',mk_radio:'Selected circle',mk_circle:'Empty circle',mk_star:'Star',mk_arrow:'Arrow',fontNote:'Saved with metric-compatible fonts (Tinos, Arimo, Carlito, Cousine): same letter widths as the Microsoft fonts, so edited lines keep their length.',themeColors:'Theme colors',standardColors:'Standard colors',recentColors:'Recent colors',automatic:'Automatic',pickColor:'Pick a color from the page',pickHint:'Click anywhere on the page to pick its color. Press Esc to cancel.',picked:'Picked color {0}',
+  f_times:'Times New Roman',f_helv:'Arial',f_calibri:'Calibri',f_cour:'Courier New',convert:'Convert',convTitle:'Convert PDF',cvFormat:'Format',f_docx:'Word',f_xlsx:'Excel',f_pptx:'PowerPoint',f_jpg:'JPG image',f_png:'PNG image',f_txt:'Plain text',fd_docx:'Editable Word document. Keeps fonts, sizes, colours, bold and italic, alignment, indents and images. Tables become tab-aligned rows.',fd_xlsx:'Rows and columns are rebuilt from the page layout. Numbers become real numbers (1.234.567 or 1,234,567) that you can add up.',fd_pptx:'One slide per page, the same size as the PDF page.',fd_jpg:'One picture per page. Several pages are packed into one ZIP file.',fd_png:'Lossless picture per page, good for text and diagrams. Several pages are packed into one ZIP file.',fd_txt:'Text only, in reading order, UTF-8.',cvPages:'Pages',cvAllN:'All {0} pages',cvCustom:'Choose pages',cvRangePh:'e.g. 1-3, 5',cvRangeBad:'Check the page list. Use page numbers and ranges such as 1-3, 5.',cvImages:'Include images',cvSheets:'Sheets',cvSheetPer:'One sheet per page',cvSheetOne:'All pages in one sheet',cvSheetName:'Page {0}',cvPptMode:'Slides',cvPptEdit:'Editable text on the page background',cvPptImg:'Exact look (each page as a picture)',cvDpi:'Resolution',cvDpiStd:'standard',cvDpiPrint:'print',cvDpiScreen:'screen',cvGo:'Convert',cvPreparing:'Preparing the document…',cvPage:'Converting page {0} of {1}…',cvPacking:'Creating the file…',cvDone:'Created {0}',cvFail:'Couldn’t convert: {0}',cvCancelled:'Conversion cancelled.',cvNoText:'No text found on these pages. Scanned documents can be converted to JPG or PNG instead.',cvEdits:'Your edits are included in the converted file.',cvLibFail:'Couldn’t load the converter. Check your connection and try again.',fmtBlocked:'This file type can’t be downloaded in this view.',t_sign:'Sign',t_check:'Checkbox',t_symbol:'Symbols',ti_sign:'Signature',ti_check:'Checkbox',ti_symbol:'Symbols',ti_mark:'Mark',h_sign:'Click the page to place your signature. Drag the corner to resize.',h_check:'Click the page to add a mark, for example inside a printed box. Click an existing mark to switch between its styles (✓ ✗ •, or ☑ ☒ ☐ ■).',h_symbol:'Pick a symbol, then click the page to place it. Each click adds one.',markStyle:'Style',size:'Size (pt)',shapes:'Shapes',textSymbols:'Text symbols',savedSigs:'Your signatures',newSig:'New signature',delSig:'Remove signature',sigTitle:'Create signature',sigDraw:'Draw',sigType:'Type',sigUpload:'Upload',sigPadHint:'Sign here with your mouse, trackpad or finger',penColor:'Ink',clear:'Clear',sigNamePh:'Type your name',sigSample:'Your Name',chooseImage:'Choose image',removeBg:'Remove white background',uploadHint:'A photo or scan of your signature on white paper works best.',rememberSig:'Remember on this device',cancel:'Cancel',insertSig:'Insert signature',sigEmpty:'Draw, type or upload a signature first.',sigPlaced:'Signature added. Drag it into place and drag the corner to resize.',mk_check:'Tick',mk_cross:'Cross',mk_dot:'Dot',mk_boxcheck:'Ticked box',mk_boxcross:'Crossed box',mk_box:'Empty box',mk_boxfill:'Filled box',mk_radio:'Selected circle',mk_circle:'Empty circle',mk_star:'Star',mk_arrow:'Arrow',fontNote:'Saved with metric-compatible fonts (Tinos, Arimo, Carlito, Cousine): same letter widths as the Microsoft fonts, so edited lines keep their length.',themeColors:'Theme colors',standardColors:'Standard colors',recentColors:'Recent colors',automatic:'Automatic',pickColor:'Pick a color from the page',pickHint:'Click anywhere on the page to pick its color. Press Esc to cancel.',picked:'Picked color {0}',
   none:'None',noColor:'No color',colorX:'Color {0}',customColor:'Custom color',
   ti_text:'Text',ti_whiteout:'Whiteout',ti_highlight:'Highlight',ti_rect:'Rectangle',ti_ellipse:'Ellipse',ti_draw:'Drawing',ti_image:'Image',ti_select:'Select',ti_edit:'Edit existing text',selected:'{0} selected',
   font:'Font',bold:'Bold',italic:'Italic',fontSize:'Font size (pt)',textColor:'Text color',color:'Color',strokeColor:'Stroke color',fill:'Fill',strokeW:'Stroke width (pt)',opacity:'Opacity {0}%',
@@ -325,7 +351,7 @@ const L={
   h_whiteout:'Kéo để phủ một vùng bằng màu trắng, hoặc chọn màu nền khác cho khớp trang.',h_highlight:'Kéo ngang qua dòng chữ cần làm nổi bật.',
   h_rect:'Kéo để vẽ hình chữ nhật. Giữ Shift để vẽ hình vuông.',h_ellipse:'Kéo để vẽ elip. Giữ Shift để vẽ hình tròn.',h_draw:'Kéo để vẽ tự do, dùng được cho chữ ký.',
   h_image:'Chọn ảnh PNG hoặc JPG, ảnh sẽ được đặt vào trang đang xem.',
-  f_times:'Times New Roman',f_helv:'Arial',f_calibri:'Calibri',f_cour:'Courier New',t_sign:'Chữ ký',t_check:'Ô đánh dấu',t_symbol:'Ký hiệu',ti_sign:'Chữ ký',ti_check:'Ô đánh dấu',ti_symbol:'Ký hiệu',ti_mark:'Dấu',h_sign:'Nhấn vào trang để đặt chữ ký. Kéo góc để đổi kích thước.',h_check:'Nhấn vào trang để thêm dấu, ví dụ vào ô vuông in sẵn. Nhấn vào dấu đã đặt để đổi kiểu (✓ ✗ •, hoặc ☑ ☒ ☐ ■).',h_symbol:'Chọn một ký hiệu rồi nhấn vào trang để đặt. Mỗi lần nhấn thêm một ký hiệu.',markStyle:'Kiểu',size:'Cỡ (pt)',shapes:'Hình',textSymbols:'Ký hiệu chữ',savedSigs:'Chữ ký của bạn',newSig:'Tạo chữ ký mới',delSig:'Xoá chữ ký',sigTitle:'Tạo chữ ký',sigDraw:'Vẽ',sigType:'Gõ tên',sigUpload:'Tải ảnh lên',sigPadHint:'Ký vào đây bằng chuột, bàn di hoặc ngón tay',penColor:'Màu mực',clear:'Xoá',sigNamePh:'Nhập họ tên',sigSample:'Họ Tên',chooseImage:'Chọn ảnh',removeBg:'Xoá nền trắng',uploadHint:'Ảnh chụp hoặc scan chữ ký trên giấy trắng cho kết quả tốt nhất.',rememberSig:'Lưu trên thiết bị này',cancel:'Huỷ',insertSig:'Chèn chữ ký',sigEmpty:'Hãy vẽ, gõ hoặc tải lên chữ ký trước.',sigPlaced:'Đã chèn chữ ký. Kéo để đặt đúng chỗ, kéo góc để đổi kích thước.',mk_check:'Dấu tích',mk_cross:'Dấu nhân',mk_dot:'Chấm tròn',mk_boxcheck:'Ô có dấu tích',mk_boxcross:'Ô có dấu nhân',mk_box:'Ô trống',mk_boxfill:'Ô tô đặc',mk_radio:'Tròn có chấm',mk_circle:'Vòng tròn',mk_star:'Ngôi sao',mk_arrow:'Mũi tên',fontNote:'Khi lưu, phông được nhúng bằng bản tương thích (Tinos, Arimo, Carlito, Cousine): độ rộng từng chữ giống hệt phông Microsoft nên dòng chữ sửa không bị dài ngắn khác đi.',themeColors:'Màu chủ đề',standardColors:'Màu chuẩn',recentColors:'Màu gần đây',automatic:'Tự động',pickColor:'Lấy màu từ trang',pickHint:'Nhấn vào một điểm trên trang để lấy màu. Nhấn Esc để huỷ.',picked:'Đã lấy màu {0}',
+  f_times:'Times New Roman',f_helv:'Arial',f_calibri:'Calibri',f_cour:'Courier New',convert:'Chuyển đổi',convTitle:'Chuyển đổi PDF',cvFormat:'Định dạng',f_docx:'Word',f_xlsx:'Excel',f_pptx:'PowerPoint',f_jpg:'Ảnh JPG',f_png:'Ảnh PNG',f_txt:'Văn bản thuần',fd_docx:'Tài liệu Word sửa được. Giữ phông, cỡ chữ, màu, đậm nghiêng, căn lề, thụt đầu dòng và hình ảnh. Bảng được chuyển thành các dòng căn bằng tab.',fd_xlsx:'Dựng lại hàng và cột theo bố cục trang. Số (1.234.567 hoặc 1,234,567) được chuyển thành số thật để cộng trừ được.',fd_pptx:'Mỗi trang thành một slide, cùng kích thước với trang PDF.',fd_jpg:'Mỗi trang một ảnh. Nhiều trang được gói vào một file ZIP.',fd_png:'Ảnh không nén mất dữ liệu, hợp với chữ và sơ đồ. Nhiều trang được gói vào một file ZIP.',fd_txt:'Chỉ lấy chữ, theo thứ tự đọc, mã UTF-8.',cvPages:'Trang',cvAllN:'Tất cả {0} trang',cvCustom:'Chọn trang',cvRangePh:'vd. 1-3, 5',cvRangeBad:'Kiểm tra lại danh sách trang. Dùng số trang và khoảng như 1-3, 5.',cvImages:'Kèm hình ảnh',cvSheets:'Trang tính',cvSheetPer:'Mỗi trang PDF một sheet',cvSheetOne:'Gộp tất cả vào một sheet',cvSheetName:'Trang {0}',cvPptMode:'Slide',cvPptEdit:'Chữ sửa được trên nền trang',cvPptImg:'Giữ nguyên hình thức (mỗi trang là một ảnh)',cvDpi:'Độ phân giải',cvDpiStd:'tiêu chuẩn',cvDpiPrint:'in ấn',cvDpiScreen:'màn hình',cvGo:'Chuyển đổi',cvPreparing:'Đang chuẩn bị tài liệu…',cvPage:'Đang chuyển trang {0}/{1}…',cvPacking:'Đang tạo file…',cvDone:'Đã tạo {0}',cvFail:'Không chuyển đổi được: {0}',cvCancelled:'Đã huỷ chuyển đổi.',cvNoText:'Không tìm thấy chữ trên các trang này. Tài liệu scan có thể chuyển sang JPG hoặc PNG.',cvEdits:'File chuyển đổi đã bao gồm các chỉnh sửa của bạn.',cvLibFail:'Không tải được bộ chuyển đổi. Kiểm tra kết nối mạng rồi thử lại.',fmtBlocked:'Chế độ xem này không cho tải loại file này.',t_sign:'Chữ ký',t_check:'Ô đánh dấu',t_symbol:'Ký hiệu',ti_sign:'Chữ ký',ti_check:'Ô đánh dấu',ti_symbol:'Ký hiệu',ti_mark:'Dấu',h_sign:'Nhấn vào trang để đặt chữ ký. Kéo góc để đổi kích thước.',h_check:'Nhấn vào trang để thêm dấu, ví dụ vào ô vuông in sẵn. Nhấn vào dấu đã đặt để đổi kiểu (✓ ✗ •, hoặc ☑ ☒ ☐ ■).',h_symbol:'Chọn một ký hiệu rồi nhấn vào trang để đặt. Mỗi lần nhấn thêm một ký hiệu.',markStyle:'Kiểu',size:'Cỡ (pt)',shapes:'Hình',textSymbols:'Ký hiệu chữ',savedSigs:'Chữ ký của bạn',newSig:'Tạo chữ ký mới',delSig:'Xoá chữ ký',sigTitle:'Tạo chữ ký',sigDraw:'Vẽ',sigType:'Gõ tên',sigUpload:'Tải ảnh lên',sigPadHint:'Ký vào đây bằng chuột, bàn di hoặc ngón tay',penColor:'Màu mực',clear:'Xoá',sigNamePh:'Nhập họ tên',sigSample:'Họ Tên',chooseImage:'Chọn ảnh',removeBg:'Xoá nền trắng',uploadHint:'Ảnh chụp hoặc scan chữ ký trên giấy trắng cho kết quả tốt nhất.',rememberSig:'Lưu trên thiết bị này',cancel:'Huỷ',insertSig:'Chèn chữ ký',sigEmpty:'Hãy vẽ, gõ hoặc tải lên chữ ký trước.',sigPlaced:'Đã chèn chữ ký. Kéo để đặt đúng chỗ, kéo góc để đổi kích thước.',mk_check:'Dấu tích',mk_cross:'Dấu nhân',mk_dot:'Chấm tròn',mk_boxcheck:'Ô có dấu tích',mk_boxcross:'Ô có dấu nhân',mk_box:'Ô trống',mk_boxfill:'Ô tô đặc',mk_radio:'Tròn có chấm',mk_circle:'Vòng tròn',mk_star:'Ngôi sao',mk_arrow:'Mũi tên',fontNote:'Khi lưu, phông được nhúng bằng bản tương thích (Tinos, Arimo, Carlito, Cousine): độ rộng từng chữ giống hệt phông Microsoft nên dòng chữ sửa không bị dài ngắn khác đi.',themeColors:'Màu chủ đề',standardColors:'Màu chuẩn',recentColors:'Màu gần đây',automatic:'Tự động',pickColor:'Lấy màu từ trang',pickHint:'Nhấn vào một điểm trên trang để lấy màu. Nhấn Esc để huỷ.',picked:'Đã lấy màu {0}',
   none:'Không',noColor:'Không màu',colorX:'Màu {0}',customColor:'Màu khác',
   ti_text:'Chữ',ti_whiteout:'Che trắng',ti_highlight:'Tô sáng',ti_rect:'Hình chữ nhật',ti_ellipse:'Elip',ti_draw:'Nét vẽ',ti_image:'Ảnh',ti_select:'Chọn',ti_edit:'Sửa chữ có sẵn',selected:'{0} đã chọn',
   font:'Phông',bold:'Đậm',italic:'Nghiêng',fontSize:'Cỡ chữ (pt)',textColor:'Màu chữ',color:'Màu',strokeColor:'Màu nét',fill:'Màu nền',strokeW:'Độ dày nét (pt)',opacity:'Độ đậm {0}%',
@@ -911,6 +937,439 @@ async function addImageFile(f){
   }catch(err){console.error(err);say(tr('imgBad'));}
 }
 
+/* ---------- Office writers: DOCX and XLSX from plain models (needs JSZip) ---------- */
+const OX={
+  xml:s=>String(s).replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F]/g,'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'),
+  head:'<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n'
+};
+/* model: {pages:[{W,H,margins:{l,t,r,b},blocks:[
+     {type:'p',jc,indL,first,before,line,pageBreak,runs:[{t,font,sz,b,i,color}]} |
+     {type:'img',data:Uint8Array,ext:'png'|'jpeg',w,h,indL,before,pageBreak} ]}],
+   defFont,defSize} ; sizes in pt */
+async function writeDocx(model){
+  const X=OX.xml,tw=v=>Math.round(v*20),emu=v=>Math.round(v*12700);
+  const zip=new JSZip();const rels=[];let imgN=0;const body=[];
+  const pPr=b=>{
+    let s='';if(b.pageBreak)s+='<w:pageBreakBefore/>';
+    if(b.tabs&&b.tabs.length)s+=`<w:tabs>${b.tabs.map(x=>`<w:tab w:val="left" w:pos="${tw(x)}"/>`).join('')}</w:tabs>`;
+    s+=`<w:spacing w:before="${tw(Math.max(0,b.before||0))}" w:after="0" w:line="${Math.round(b.line||240)}" w:lineRule="auto"/>`;
+    const L=Math.max(0,tw(b.indL||0));const F=tw(b.first||0);
+    if(L||F)s+=`<w:ind w:left="${L}"${F>0?` w:firstLine="${F}"`:F<0?` w:hanging="${Math.min(-F,L)}"`:''}/>`;
+    if(b.jc&&b.jc!=='left')s+=`<w:jc w:val="${b.jc}"/>`;
+    return`<w:pPr>${s}</w:pPr>`;
+  };
+  const run=r=>{
+    const rp=`<w:rPr><w:rFonts w:ascii="${X(r.font)}" w:hAnsi="${X(r.font)}" w:cs="${X(r.font)}" w:eastAsia="${X(r.font)}"/>${r.b?'<w:b/><w:bCs/>':''}${r.i?'<w:i/><w:iCs/>':''}${r.color&&r.color!=='000000'?`<w:color w:val="${r.color}"/>`:''}<w:sz w:val="${Math.round(r.sz*2)}"/><w:szCs w:val="${Math.round(r.sz*2)}"/></w:rPr>`;
+    return String(r.t).split('\t').map((part,k)=>(k?`<w:r>${rp}<w:tab/></w:r>`:'')+(part?`<w:r>${rp}<w:t xml:space="preserve">${X(part)}</w:t></w:r>`:'')).join('');
+  };
+  for(const pg of model.pages){
+    for(const b of pg.blocks){
+      if(b.type==='img'){
+        imgN++;const rid='rIdImg'+imgN,name=`image${imgN}.${b.ext}`;
+        zip.file('word/media/'+name,b.data);rels.push(`<Relationship Id="${rid}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="media/${name}"/>`);
+        const cx=emu(b.w),cy=emu(b.h);
+        body.push(`<w:p>${pPr(b)}<w:r><w:drawing><wp:inline distT="0" distB="0" distL="0" distR="0"><wp:extent cx="${cx}" cy="${cy}"/><wp:docPr id="${imgN}" name="Picture ${imgN}"/><wp:cNvGraphicFramePr><a:graphicFrameLocks noChangeAspect="1"/></wp:cNvGraphicFramePr><a:graphic><a:graphicData uri="http://schemas.openxmlformats.org/drawingml/2006/picture"><pic:pic><pic:nvPicPr><pic:cNvPr id="${imgN}" name="${name}"/><pic:cNvPicPr/></pic:nvPicPr><pic:blipFill><a:blip r:embed="${rid}"/><a:stretch><a:fillRect/></a:stretch></pic:blipFill><pic:spPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="${cx}" cy="${cy}"/></a:xfrm><a:prstGeom prst="rect"><a:avLst/></a:prstGeom></pic:spPr></pic:pic></a:graphicData></a:graphic></wp:inline></w:drawing></w:r></w:p>`);
+      }else body.push(`<w:p>${pPr(b)}${b.runs.map(run).join('')}</w:p>`);
+    }
+  }
+  const p0=model.pages[0]||{W:595,H:842,margins:{l:72,t:72,r:72,b:72}};const m=p0.margins;
+  if(!body.length)body.push('<w:p/>');
+  const doc=`${OX.head}<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" xmlns:wp="http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing" xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:pic="http://schemas.openxmlformats.org/drawingml/2006/picture"><w:body>${body.join('')}<w:sectPr><w:pgSz w:w="${tw(p0.W)}" w:h="${tw(p0.H)}"${p0.W>p0.H?' w:orient="landscape"':''}/><w:pgMar w:top="${tw(m.t)}" w:right="${tw(m.r)}" w:bottom="${tw(m.b)}" w:left="${tw(m.l)}" w:header="0" w:footer="0" w:gutter="0"/></w:sectPr></w:body></w:document>`;
+  const styles=`${OX.head}<w:styles xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:docDefaults><w:rPrDefault><w:rPr><w:rFonts w:ascii="${X(model.defFont)}" w:hAnsi="${X(model.defFont)}" w:cs="${X(model.defFont)}" w:eastAsia="${X(model.defFont)}"/><w:sz w:val="${Math.round(model.defSize*2)}"/><w:szCs w:val="${Math.round(model.defSize*2)}"/><w:lang w:val="vi-VN"/></w:rPr></w:rPrDefault><w:pPrDefault><w:pPr><w:spacing w:after="0" w:line="240" w:lineRule="auto"/></w:pPr></w:pPrDefault></w:docDefaults><w:style w:type="paragraph" w:default="1" w:styleId="Normal"><w:name w:val="Normal"/><w:qFormat/></w:style></w:styles>`;
+  zip.file('[Content_Types].xml',`${OX.head}<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Default Extension="png" ContentType="image/png"/><Default Extension="jpeg" ContentType="image/jpeg"/><Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/><Override PartName="/word/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.styles+xml"/></Types>`);
+  zip.file('_rels/.rels',`${OX.head}<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/></Relationships>`);
+  zip.file('word/_rels/document.xml.rels',`${OX.head}<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rIdStyles" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/>${rels.join('')}</Relationships>`);
+  zip.file('word/document.xml',doc);zip.file('word/styles.xml',styles);
+  return zip.generateAsync({type:'blob',mimeType:'application/vnd.openxmlformats-officedocument.wordprocessingml.document',compression:'DEFLATE'});
+}
+/* sheets: [{name, widths:[chars], rows:[[{v,num,fmt,b}|null]]}] ; fmt: 0 general, 3 #,##0, 4 #,##0.00, 9 0%, 10 0.00% */
+async function writeXlsx(sheets){
+  const X=OX.xml,zip=new JSZip();const FMTS=[0,3,4,9,10];
+  const col=n=>{let s='';n++;while(n){const r=(n-1)%26;s=String.fromCharCode(65+r)+s;n=Math.floor((n-1)/26);}return s;};
+  const used=new Set();
+  const safeName=(n,i)=>{let s=String(n).replace(/[\[\]:*?\/\\]/g,' ').slice(0,31).trim()||('Sheet'+(i+1));let k=2,b=s;while(used.has(s.toLowerCase()))s=(b.slice(0,27)+' ('+(k++)+')');used.add(s.toLowerCase());return s;};
+  const wb=[],wbr=[],ct=[];
+  sheets.forEach((sh,i)=>{
+    const rows=sh.rows.map((r,ri)=>{const cells=r.map((c,ci)=>{if(!c||c.v===''||c.v==null)return'';const s=(c.b?1:0)+2*Math.max(0,FMTS.indexOf(c.fmt||0));const ref=col(ci)+(ri+1);
+      return c.num?`<c r="${ref}"${s?` s="${s}"`:''}><v>${c.v}</v></c>`:`<c r="${ref}" t="inlineStr"${s?` s="${s}"`:''}><is><t xml:space="preserve">${X(c.v)}</t></is></c>`;}).join('');
+      return`<row r="${ri+1}">${cells}</row>`;}).join('');
+    const cols=(sh.widths||[]).length?`<cols>${sh.widths.map((w,ci)=>`<col min="${ci+1}" max="${ci+1}" width="${Math.max(4,Math.min(80,w)).toFixed(1)}" customWidth="1"/>`).join('')}</cols>`:'';
+    zip.file(`xl/worksheets/sheet${i+1}.xml`,`${OX.head}<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">${cols}<sheetData>${rows}</sheetData></worksheet>`);
+    wb.push(`<sheet name="${X(safeName(sh.name,i))}" sheetId="${i+1}" r:id="rId${i+1}"/>`);
+    wbr.push(`<Relationship Id="rId${i+1}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet${i+1}.xml"/>`);
+    ct.push(`<Override PartName="/xl/worksheets/sheet${i+1}.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>`);
+  });
+  const xfs=[];for(const f of FMTS)for(const b of[0,1])xfs.push(`<xf numFmtId="${f}" fontId="${b}" fillId="0" borderId="0" xfId="0"${f?' applyNumberFormat="1"':''}${b?' applyFont="1"':''}/>`);
+  zip.file('xl/styles.xml',`${OX.head}<styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><fonts count="2"><font><sz val="11"/><name val="Calibri"/><family val="2"/></font><font><b/><sz val="11"/><name val="Calibri"/><family val="2"/></font></fonts><fills count="2"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="gray125"/></fill></fills><borders count="1"><border><left/><right/><top/><bottom/><diagonal/></border></borders><cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs><cellXfs count="${xfs.length}">${xfs.join('')}</cellXfs><cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles></styleSheet>`);
+  zip.file('xl/workbook.xml',`${OX.head}<workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets>${wb.join('')}</sheets></workbook>`);
+  zip.file('xl/_rels/workbook.xml.rels',`${OX.head}<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">${wbr.join('')}<Relationship Id="rIdS" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/></Relationships>`);
+  zip.file('_rels/.rels',`${OX.head}<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/></Relationships>`);
+  zip.file('[Content_Types].xml',`${OX.head}<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/><Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/>${ct.join('')}</Types>`);
+  return zip.generateAsync({type:'blob',mimeType:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',compression:'DEFLATE'});
+}
+/* number parsing for spreadsheet cells; style 'vn' = 1.234.567,89 ; 'en' = 1,234,567.89 */
+function detectNumStyle(strs){let vn=0,en=0;for(const s of strs){if(/\d\.\d{3}\.\d{3}(?!\d)/.test(s)||/\d,\d{1,2}(?!\d)/.test(s)||/\d\.\d{3},\d/.test(s))vn++;if(/\d,\d{3},\d{3}(?!\d)/.test(s)||/\d\.\d{1,2}(?!\d)/.test(s)||/\d,\d{3}\.\d/.test(s))en++;}return vn>en?'vn':'en';}
+function parseNum(raw,style){
+  let s=String(raw).trim().replace(/[\s ]/g,'');let neg=false,pct=false;
+  if(/^\(.*\)$/.test(s)){neg=true;s=s.slice(1,-1);}
+  s=s.replace(/^(VND|USD|\$|€|£|¥)/i,'').replace(/(VND|USD|đ|₫|\$|€)$/i,'');
+  if(s.endsWith('%')){pct=true;s=s.slice(0,-1);}
+  if(/^[-−–]/.test(s)){neg=!neg;s=s.slice(1);}
+  if(!/^\d[\d.,]*$/.test(s)||/[.,]$/.test(s))return null;
+  const dec=style==='vn'?',':'.',grp=style==='vn'?'.':',';
+  const parts=s.split(dec);if(parts.length>2)return null;
+  const ip=parts[0],fp=parts[1];
+  if(ip.includes(dec==='.'?',':'.')&&!new RegExp('^\\d{1,3}(\\'+grp+'\\d{3})+$').test(ip))return null;
+  if(fp!==undefined&&!/^\d+$/.test(fp))return null;
+  const digits=ip.split(grp).join('');if(/^0\d/.test(digits)||digits.length>15)return null;
+  let v=parseFloat(digits+(fp!==undefined?'.'+fp:''));if(!isFinite(v))return null;
+  if(neg)v=-v;
+  let fmt=0;
+  if(pct){v=v/100;fmt=fp?10:9;}else if(ip.includes(grp)||Math.abs(v)>=10000)fmt=fp?4:3;
+  return{v:Math.round(v*1e10)/1e10,fmt};
+}
+
+/* ---------- PDF analysis for conversion: lines, paragraphs, tables, images ---------- */
+const FAM_NAME={times:'Times New Roman',helv:'Arial',calibri:'Calibri',cour:'Courier New'};
+const FAM_LH={times:1.15,helv:1.15,calibri:1.22,cour:1.13};
+function classifyFont(fname,gen){
+  const nm=String(fname||'').toLowerCase().replace(/^[a-z]{6}\+/,'').replace(/[,_-]/g,' ');gen=String(gen||'').toLowerCase();
+  let fam,named=true;
+  if(/calibri|carlito|aptos|corbel|candara/.test(nm))fam='calibri';
+  else if(/courier|cousine|consolas|menlo|lucida ?console|mono/.test(nm))fam='cour';
+  else if(/times|tinos|cambria|caladea|georgia|garamond|minion|palatino|baskerville|book ?antiqua|liberation ?serif|noto ?serif|dejavu ?serif|\bserif|roman/.test(nm)&&!/sans/.test(nm))fam='times';
+  else if(/arial|helvetica|arimo|verdana|tahoma|segoe|roboto|open ?sans|inter|lato|noto ?sans|liberation ?sans|dejavu ?sans|sans/.test(nm))fam='helv';
+  else{named=false;fam=gen==='serif'?'times':gen==='monospace'?'cour':'helv';}
+  return{fam,named,bold:/bold|black|heavy|semibold|demi/.test(nm),italic:/italic|oblique/.test(nm)};
+}
+const mat=(m,n)=>[m[0]*n[0]+m[2]*n[1],m[1]*n[0]+m[3]*n[1],m[0]*n[2]+m[2]*n[3],m[1]*n[2]+m[3]*n[3],m[0]*n[4]+m[2]*n[5]+m[4],m[1]*n[4]+m[3]*n[5]+m[5]];
+/* image placements from the operator list, in page points (top-left origin) */
+function imageRects(opl,vp,OPS){
+  let ctm=[1,0,0,1,0,0];const st=[],out=[];
+  const paint=new Set([OPS.paintImageXObject,OPS.paintInlineImageXObject,OPS.paintImageXObjectRepeat].filter(v=>v!=null));
+  for(let i=0;i<opl.fnArray.length;i++){
+    const fn=opl.fnArray[i],a=opl.argsArray[i];
+    if(fn===OPS.save)st.push(ctm);
+    else if(fn===OPS.restore)ctm=st.pop()||[1,0,0,1,0,0];
+    else if(fn===OPS.transform)ctm=mat(ctm,a);
+    else if(fn===OPS.paintFormXObjectBegin){st.push(ctm);if(a&&Array.isArray(a[0])&&a[0].length===6)ctm=mat(ctm,a[0]);}
+    else if(fn===OPS.paintFormXObjectEnd)ctm=st.pop()||ctm;
+    else if(paint.has(fn)){
+      const m=mat(vp.transform,ctm);const P=[[0,0],[1,0],[0,1],[1,1]].map(([x,y])=>[m[0]*x+m[2]*y+m[4],m[1]*x+m[3]*y+m[5]]);
+      let x0=Math.min(...P.map(p=>p[0])),x1=Math.max(...P.map(p=>p[0])),y0=Math.min(...P.map(p=>p[1])),y1=Math.max(...P.map(p=>p[1]));
+      x0=Math.max(0,x0);y0=Math.max(0,y0);x1=Math.min(vp.width,x1);y1=Math.min(vp.height,y1);
+      if(x1-x0>=8&&y1-y0>=8&&!out.some(r=>Math.abs(r.x-x0)<1&&Math.abs(r.y-y0)<1&&Math.abs(r.w-(x1-x0))<1))out.push({x:x0,y:y0,w:x1-x0,h:y1-y0});
+    }
+  }
+  return out;
+}
+/* text colour of a run: pixel furthest from the local background */
+function inkOf(ctx,S,x,y,w,h,snap){
+  try{
+    const X=Math.max(0,Math.floor(x*S)),Y=Math.max(0,Math.floor(y*S)),Wd=Math.max(1,Math.ceil(w*S)),Hd=Math.max(1,Math.ceil(h*S));
+    const d=ctx.getImageData(X,Y,Wd,Hd).data;const hist=new Map();
+    for(let i=0;i<d.length;i+=4){const q=((d[i]>>4)<<8)|((d[i+1]>>4)<<4)|(d[i+2]>>4);const e=hist.get(q);if(e){e[0]++;e[1]+=d[i];e[2]+=d[i+1];e[3]+=d[i+2];}else hist.set(q,[1,d[i],d[i+1],d[i+2]]);}
+    let top=null;for(const e of hist.values())if(!top||e[0]>top[0])top=e;const bg=[top[1]/top[0],top[2]/top[0],top[3]/top[0]];
+    let far=0,ink=null;for(let i=0;i<d.length;i+=4){const dd=Math.hypot(d[i]-bg[0],d[i+1]-bg[1],d[i+2]-bg[2]);if(dd>far){far=dd;ink=[d[i],d[i+1],d[i+2]];}}
+    if(!ink||far<60||Math.max(...ink)<70)return'000000';
+    const hex='#'+ink.map(v=>v.toString(16).padStart(2,'0')).join('');return(snap?snap(hex,34):hex).slice(1).toUpperCase();
+  }catch(_){return'000000';}
+}
+async function analyzePage(pdfjs,pg,{makeCanvas,scale=2,colors=true,images=true,textless=false,snap}={}){
+  const vp=pg.getViewport({scale:1});const W=vp.width,H=vp.height;
+  const opl=await pg.getOperatorList();const tc=await pg.getTextContent();
+  let canvas=null,ctx=null,bgCanvas=null;
+  if(colors||images){
+    canvas=makeCanvas(Math.ceil(W*scale),Math.ceil(H*scale));ctx=canvas.getContext('2d');ctx.fillStyle='#fff';ctx.fillRect(0,0,canvas.width,canvas.height);
+    await pg.render({canvasContext:ctx,viewport:pg.getViewport({scale})}).promise;
+  }
+  if(textless){
+    bgCanvas=makeCanvas(Math.ceil(W*scale),Math.ceil(H*scale));const c2=bgCanvas.getContext('2d');c2.fillStyle='#fff';c2.fillRect(0,0,bgCanvas.width,bgCanvas.height);
+    c2.fillText=()=>{};c2.strokeText=()=>{};
+    await pg.render({canvasContext:c2,viewport:pg.getViewport({scale})}).promise;
+  }
+  const items=[];
+  for(const it0 of tc.items){
+    const raw=it0.str||'';const str=raw.replace(/[\u0000-\u0008\u000B-\u001F\u007F]/g,'');const ctrl=str!==raw;
+    if(!str.trim())continue; /* pdf.js adds whitespace items for every position jump, so spacing is judged by geometry */
+    const it={...it0,str};
+    const t=pdfjs.Util.transform(vp.transform,it.transform);
+    if(Math.abs(t[1])>.01*Math.abs(t[0])||t[0]<=0)continue;
+    const fh=Math.hypot(t[2],t[3]);if(fh<1)continue;
+    const st=tc.styles[it.fontName]||{};const asc=st.ascent||.8,desc=st.descent||-.2;
+    let f=null;try{f=pg.commonObjs.get(it.fontName);}catch(_){}
+    const cf=classifyFont(f&&f.name,st.fontFamily);
+    const top=t[5]-fh*asc,h=fh*(asc-desc);
+    items.push({str:it.str,ctrl,x:t[4],base:t[5],w:it.width,fh,top,h,fam:cf.fam,bold:cf.bold||!!(f&&f.bold),italic:cf.italic||!!(f&&f.italic),
+      color:ctx&&colors?inkOf(ctx,scale,t[4],top,Math.max(it.width,1),h,snap):'000000'});
+  }
+  const imgs=images?imageRects(opl,vp,pdfjs.OPS):[];
+  return{W,H,items,images:imgs,canvas,bgCanvas,scale};
+}
+function buildLines(items){
+  const its=items.slice().sort((a,b)=>a.base-b.base||a.x-b.x);const lines=[];
+  for(const it of its){const L=lines[lines.length-1];if(L&&Math.abs(it.base-L.base)<=Math.max(1.2,Math.min(it.fh,L.items[0].fh)*.35))L.items.push(it);else lines.push({base:it.base,items:[it]});}
+  for(const L of lines){
+    L.items.sort((a,b)=>a.x-b.x);L.x0=Math.min(...L.items.map(i=>i.x));L.x1=Math.max(...L.items.map(i=>i.x+i.w));
+    L.top=Math.min(...L.items.map(i=>i.top));L.bottom=Math.max(...L.items.map(i=>i.base+i.fh*.22));
+    const cnt={};for(const i of L.items){const k=Math.round(i.fh*2)/2;cnt[k]=(cnt[k]||0)+i.str.length;}L.fh=+Object.entries(cnt).sort((a,b)=>b[1]-a[1])[0][0];
+    const fc={};for(const i of L.items)fc[i.fam]=(fc[i.fam]||0)+i.str.length;L.fam=Object.entries(fc).sort((a,b)=>b[1]-a[1])[0][0];
+    L.runs=[];L.tabs=[];L.segs=[];let prev=null,seg=null;
+    const add=(list,t,it,sz)=>{const r=list[list.length-1];if(r&&r.fam===it.fam&&r.b===it.bold&&r.i===it.italic&&r.sz===sz&&r.color===it.color)r.t+=t;else list.push({t,fam:it.fam,font:FAM_NAME[it.fam],sz,b:it.bold,i:it.italic,color:it.color});};
+    for(const it of L.items){
+      let t=it.str,tab=false;
+      if(prev){const gap=it.x-(prev.x+prev.w);
+        if(gap>Math.max(it.fh,prev.fh)*2.2){tab=true;t=t.replace(/^\s+/,'');L.tabs.push(it.x);}
+        else if(gap>it.fh*.2&&!prev.ctrl&&!/\s$/.test(prev.str)&&!/^\s/.test(t))t=' '+t;}
+      const sz=Math.round(it.fh*2)/2;
+      add(L.runs,(tab?'\t':'')+t,it,sz);
+      if(!seg||tab){seg={x0:it.x,x1:it.x+it.w,runs:[]};L.segs.push(seg);}
+      add(seg.runs,t,it,sz);seg.x1=Math.max(seg.x1,it.x+it.w);
+      prev=it;
+    }
+    L.text=L.runs.map(r=>r.t).join('');
+  }
+  return lines;
+}
+const BULLET=/^\s*([\-–•●▪◦*]|\d{1,3}[.)]|[a-zA-Z][.)]|[IVX]{1,4}[.)])\s/;
+function buildParas(lines,box){
+  const{L,R}=box;const paras=[];let cur=null;
+  for(const l of lines){
+    if(cur){
+      const prev=cur.lines[cur.lines.length-1];const step=l.base-prev.base;
+      const minX=Math.min(...cur.lines.map(x=>x.x0));
+      const cont=step>0&&step<prev.fh*1.9&&Math.abs(l.fh-prev.fh)<=.6&&prev.x1>R-prev.fh*3.5&&!prev.tabs.length&&!l.tabs.length&&!BULLET.test(l.text)
+        &&l.x0>=(cur.lines.length===1?L:minX)-prev.fh*.6&&l.x0<=cur.lines[0].x0+prev.fh*3;
+      if(cont){cur.lines.push(l);continue;}
+    }
+    cur={lines:[l]};paras.push(cur);
+  }
+  for(const p of paras){
+    const ls=p.lines,f=ls[0],n=ls.length;const mid=(L+R)/2,tol=Math.max(3,(R-L)*.025);
+    p.top=f.top;p.bottom=ls[n-1].bottom;p.fh=f.fh;p.fam=f.fam;p.firstBase=f.base;p.lastBase=ls[n-1].base;
+    p.step=n>1?(ls[n-1].base-f.base)/(n-1):0;
+    const centered=ls.every(x=>Math.abs((x.x0+x.x1)/2-mid)<tol)&&f.x0>L+f.fh*2;
+    const right=n===1&&f.x1>R-f.fh*.8&&f.x0>L+(R-L)*.35&&!f.tabs.length;
+    const justified=n>1&&ls.slice(0,-1).every(x=>x.x1>R-x.fh*1.5);
+    p.jc=centered?'center':right?'right':justified?'both':'left';
+    if(p.jc==='center'||p.jc==='right'){p.indL=0;p.first=0;}
+    else{const body=n>1?Math.min(...ls.slice(1).map(x=>x.x0)):f.x0;p.indL=Math.max(0,body-L);p.first=f.x0-L-p.indL;}
+    p.tabs=n===1?f.tabs.map(x=>x-L):[];
+    p.runs=[];for(let k=0;k<n;k++){for(const r of ls[k].runs)p.runs.push({...r});
+      if(k<n-1){const last=p.runs[p.runs.length-1];if(!/[\s\-]$/.test(last.t))last.t+=' ';}}
+    for(let k=1;k<p.runs.length;k++){const a=p.runs[k-1],b=p.runs[k];if(a.font===b.font&&a.b===b.b&&a.i===b.i&&a.sz===b.sz&&a.color===b.color){a.t+=b.t;p.runs.splice(k,1);k--;}}
+  }
+  return paras;
+}
+function contentBox(pages){
+  let L=1e9,R=-1e9,T=1e9,B=-1e9;
+  for(const pm of pages){for(const l of pm.lines){L=Math.min(L,l.x0);R=Math.max(R,l.x1);T=Math.min(T,l.top);B=Math.max(B,l.bottom);}for(const im of pm.images||[]){T=Math.min(T,im.y);B=Math.max(B,im.y+im.h);}}
+  const W=pages[0].W,H=pages[0].H;if(L>R){L=72;R=W-72;T=72;B=H-72;}
+  const l=Math.max(18,Math.min(L,W/3)),t=Math.max(14,Math.min(T,H/3));
+  return{L:l,R:Math.min(W-18,Math.max(R,l+50)),m:{l,t,r:Math.max(18,W-Math.max(R,l+50)),b:Math.max(14,Math.min(H-B-4,72))}};
+}
+/* Word model */
+function docxModel(pages,opts){
+  const box=contentBox(pages);const pagesOut=[];const famCount={},szCount={};
+  for(const pm of pages){
+    const blocks=[];const paras=buildParas(pm.lines,box);
+    for(const p of paras){for(const r of p.runs){famCount[r.font]=(famCount[r.font]||0)+r.t.length;szCount[r.sz]=(szCount[r.sz]||0)+r.t.length;}}
+    const items=paras.map(p=>({k:'p',top:p.top,p}));
+    const pageArea=pm.W*pm.H;
+    if(opts.images&&pm.imageBlocks)for(const im of pm.imageBlocks){if(im.w*im.h>pageArea*.85&&paras.length)continue;items.push({k:'img',top:im.y,im});}
+    if(!paras.length&&opts.images&&pm.pageImage)items.push({k:'img',top:box.m.t,im:{...pm.pageImage,x:box.L,y:box.m.t}});
+    items.sort((a,b)=>a.top-b.top);
+    let prevBottom=box.m.t,prevBase=null,prevFh=0;
+    items.forEach((it,idx)=>{
+      if(it.k==='p'){const p=it.p;const lh=FAM_LH[p.fam]||1.15;
+        const before=prevBase==null?Math.max(0,p.top-prevBottom):Math.max(0,(p.firstBase-prevBase)-p.fh*lh);
+        const line=p.step?Math.max(200,Math.min(720,240*p.step/(p.fh*lh))):240;
+        blocks.push({type:'p',jc:p.jc,indL:p.indL,first:p.first,before:Math.min(before,400),line,tabs:p.tabs,pageBreak:idx===0&&pagesOut.length>0,runs:p.runs});
+        prevBottom=p.bottom;prevBase=p.lastBase;prevFh=p.fh;
+      }else{const im=it.im;const maxW=box.R-box.L;let w=im.w,h=im.h;if(w>maxW){h=h*maxW/w;w=maxW;}
+        blocks.push({type:'img',data:im.data,ext:im.ext,w,h,indL:Math.max(0,Math.min(im.x-box.L,maxW-w)),before:Math.max(0,Math.min(im.y-prevBottom,400)),pageBreak:idx===0&&pagesOut.length>0});
+        prevBottom=im.y+im.h;prevBase=null;}
+    });
+    if(!blocks.length)blocks.push({type:'p',pageBreak:pagesOut.length>0,runs:[]});
+    pagesOut.push({W:pm.W,H:pm.H,margins:box.m,blocks});
+  }
+  const top=o=>Object.entries(o).sort((a,b)=>b[1]-a[1])[0];
+  return{pages:pagesOut,defFont:(top(famCount)||['Times New Roman'])[0],defSize:+(top(szCount)||[12])[0]};
+}
+/* Excel model. A row is tabular when it holds several phrases far apart. Within tabular rows, text is split
+   into word units and column edges are x positions that (almost) every tabular row leaves empty. */
+function tableModel(lines,W){
+  const units=L=>{const u=[];for(const it of L.items){const p=u[u.length-1];const gap=p?it.x-p.x1:1e9;const fh=Math.max(it.fh,p?p.fh:0);
+      if(p&&(gap<=fh*.12||p.ctrl)){p.text+=it.str;p.x1=Math.max(p.x1,it.x+it.w);p.b=p.b&&it.bold;p.ctrl=it.ctrl;}
+      else u.push({x0:it.x,x1:it.x+it.w,text:it.str,b:it.bold,fh:it.fh,ctrl:it.ctrl});}return u;};
+  const coarse=us=>{const out=[];for(const w of us){const p=out[out.length-1];if(p&&w.x0-p.x1<=Math.max(w.fh,p.fh)*.9){p.x1=w.x1;}else out.push({x0:w.x0,x1:w.x1,fh:w.fh});}return out;};
+  const rows=lines.map(L=>{const us=units(L);return{us,tabular:coarse(us).length>1};});
+  const tab=rows.filter(r=>r.tabular).map(r=>r.us);
+  let seps=[];
+  if(tab.length){
+    const tol=Math.floor(tab.length*.08);const lo=Math.min(...tab.map(r=>r[0].x0)),hi=Math.max(...tab.map(r=>r[r.length-1].x1));
+    const edges=[...new Set(tab.flatMap(r=>r.flatMap(p=>[p.x0,p.x1])))].sort((a,b)=>a-b);
+    let zone=null;const zones=[];
+    for(let i=0;i<edges.length-1;i++){const a=edges[i],b=edges[i+1];if(b<=lo||a>=hi){zone=null;continue;}const mid=(a+b)/2;
+      const cnt=tab.reduce((n,r)=>n+(r.some(p=>p.x0<mid&&p.x1>mid)?1:0),0);
+      if(cnt<=tol){if(zone&&Math.abs(zone[1]-a)<.01)zone[1]=b;else{zone=[a,b];zones.push(zone);}}else zone=null;}
+    seps=zones.filter(z=>z[1]-z[0]>=.8).map(z=>(z[0]+z[1])/2);
+  }
+  const colOf=x=>{let k=0;while(k<seps.length&&x>seps[k])k++;return k;};
+  const grid=rows.map(r=>{const cells=[];
+    const put=(c,u)=>{const t=u.text;if(!t.trim())return;if(cells[c]){const gap=u.x0-cells[c].x1;cells[c].text+=(gap>u.fh*.2&&!cells[c].ctrl&&!/\s$/.test(cells[c].text)&&!/^\s/.test(t)?' ':'')+t;cells[c].b=cells[c].b&&u.b;cells[c].x1=u.x1;cells[c].ctrl=u.ctrl;}else cells[c]={text:t,b:u.b,x1:u.x1,ctrl:u.ctrl};};
+    if(r.tabular)for(const u of r.us)put(colOf((u.x0+u.x1)/2),u);
+    else{const c=colOf(r.us[0].x0+1);for(const u of r.us)put(c,u);}
+    return cells;});
+  const used=[];grid.forEach(r=>r.forEach((c,i)=>{if(c)used[i]=true;}));
+  let keep=[];for(let i=0;i<=seps.length;i++)if(used[i])keep.push(i);
+  const fhAll=lines.length?lines.reduce((a,l)=>a+l.fh,0)/lines.length:10;
+  for(let k=0;k<keep.length-1;k++){const a=keep[k],b=keep[k+1];
+    const clash=grid.some(r=>r[a]&&r[b]);const width=(seps[b-1]!=null&&seps[a]!=null)?seps[b-1]-(seps[a-1]??seps[a]-fhAll*3):fhAll*9;
+    if(!clash&&b===a+1&&width<fhAll*8){grid.forEach(r=>{if(!r[a]&&r[b])r[a]=r[b];r[b]=undefined;});keep.splice(k+1,1);k--;}}
+  return grid.map(r=>keep.map(i=>r[i]?{text:r[i].text.trim(),b:r[i].b}:null));
+}
+
+/* ---------- convert dialog ---------- */
+const LIBS={jszip:'js/jszip.min.js?v=1',pptx:'js/pptxgen.min.js?v=1'};
+const libP={};
+function loadLib(k){return libP[k]||(libP[k]=new Promise((res,rej)=>{const sc=document.createElement('script');sc.src=LIBS[k];sc.onload=res;sc.onerror=()=>{delete libP[k];rej(new Error(tr('cvLibFail')));};document.head.appendChild(sc);}));}
+const CONV_FORMATS=[{k:'docx',badge:'W',color:'#185abd'},{k:'xlsx',badge:'X',color:'#107c41'},{k:'pptx',badge:'P',color:'#c43e1c'},{k:'jpg',badge:'JPG',color:'#9a6400'},{k:'png',badge:'PNG',color:'#5b3aa0'},{k:'txt',badge:'TXT',color:'#4a5560'}];
+const conv={fmt:'docx',busy:false,abort:false,opts:{images:true,sheets:'page',ppt:'edit',dpi:150},range:'all'};
+const mkCanvas=(w,h)=>{const c=document.createElement('canvas');c.width=w;c.height=h;return c;};
+const toBlob=(c,type,q)=>new Promise(r=>c.toBlob(r,type,q));
+const blobBytes=async b=>new Uint8Array(await b.arrayBuffer());
+function parseRange(str,max){
+  const out=new Set();
+  for(const part of String(str).split(/[,;]/)){const t=part.trim();if(!t)continue;
+    const m=t.match(/^(\d*)\s*[-–]\s*(\d*)$/);
+    if(m){const a=+(m[1]||1),b=+(m[2]||max);if(a<1||b<a||a>max)return null;for(let i=a;i<=Math.min(b,max);i++)out.add(i);}
+    else if(/^\d+$/.test(t)){const n=+t;if(n<1||n>max)return null;out.add(n);}else return null;}
+  return out.size?[...out].sort((a,b)=>a-b):null;
+}
+function renderConvOpts(){
+  const o=conv.opts;let h='';
+  if(conv.fmt==='docx')h=`<label class="chk"><input type="checkbox" id="cvImages" ${o.images?'checked':''}><span>${tr('cvImages')}</span></label>`;
+  if(conv.fmt==='xlsx')h=`<div class="field"><label for="cvSheets">${tr('cvSheets')}</label><select id="cvSheets"><option value="page" ${o.sheets==='page'?'selected':''}>${tr('cvSheetPer')}</option><option value="one" ${o.sheets==='one'?'selected':''}>${tr('cvSheetOne')}</option></select></div>`;
+  if(conv.fmt==='pptx')h=`<div class="field"><label for="cvPpt">${tr('cvPptMode')}</label><select id="cvPpt"><option value="edit" ${o.ppt==='edit'?'selected':''}>${tr('cvPptEdit')}</option><option value="img" ${o.ppt==='img'?'selected':''}>${tr('cvPptImg')}</option></select></div>`;
+  if(conv.fmt==='jpg'||conv.fmt==='png')h=`<div class="field"><label for="cvDpi">${tr('cvDpi')}</label><select id="cvDpi">${[72,150,200,300].map(d=>`<option value="${d}" ${o.dpi===d?'selected':''}>${d} dpi${d===150?' · '+tr('cvDpiStd'):d===300?' · '+tr('cvDpiPrint'):d===72?' · '+tr('cvDpiScreen'):''}</option>`).join('')}</select></div>`;
+  $('#convFmts').innerHTML=CONV_FORMATS.map(f=>`<button class="fmt" role="radio" data-fmt="${f.k}" aria-checked="${conv.fmt===f.k}"><span class="badge" style="background:${f.color}">${f.badge}</span><span class="fmtname">${tr('f_'+f.k)}</span><span class="fmtext">.${f.k==='jpg'||f.k==='png'?f.k+' / .zip':f.k}</span></button>`).join('');
+  $('#convDesc').textContent=tr('fd_'+conv.fmt);
+  $('#convOpts').innerHTML=h;$('#convOpts').hidden=!h;
+  $('#cvRange').hidden=conv.range!=='custom';
+  document.querySelectorAll('input[name=cvRangeMode]').forEach(r=>r.checked=r.value===conv.range);
+}
+function convProgress(frac,text){$('#convBar').style.width=Math.round(frac*100)+'%';$('#convStatus').textContent=text||'';$('#convProgWrap').hidden=false;}
+function openConvert(){
+  if(!pages.length)return;if(editing)finishEdit();
+  $('#convErr').textContent='';$('#convProgWrap').hidden=true;$('#convGo').disabled=false;$('#convTotal').textContent=tr('cvAllN',pages.length);
+  renderConvOpts();$('#convModal').hidden=false;setTimeout(()=>{const b=document.querySelector('#convFmts [aria-checked="true"]');if(b)b.focus();},0);
+}
+function closeConvert(){if(conv.busy){conv.abort=true;return;}$('#convModal').hidden=true;}
+async function offerFile(name,blob){
+  const d=await getDownloads();
+  if(d){try{await d.save({filename:name,data:blob});say(tr('saved',name,Math.max(1,Math.round(blob.size/1024))));return true;}
+    catch(e){const c=e&&e.code;say(c==='declined'?tr('declined'):c==='rate_limited'?tr('rateLim'):c==='extension_not_enabled'||c==='rejected_extension'?tr('fmtBlocked'):tr('saveFail'),true);return false;}}
+  if(window.claude){say(tr('noDl'),true);return false;}
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove();},4000);
+  say(tr('created',name));return true;
+}
+async function runConvert(){
+  if(conv.busy)return;
+  let nums=null;
+  if(conv.range==='custom'){nums=parseRange($('#cvRange').value,pages.length);if(!nums){$('#convErr').textContent=tr('cvRangeBad');$('#cvRange').focus();return;}}
+  conv.busy=true;conv.abort=false;$('#convErr').textContent='';$('#convGo').disabled=true;$('#convCancel').textContent=tr('cancel');
+  let doc=null;const fmt=conv.fmt,o=conv.opts;
+  const check=()=>{if(conv.abort)throw new Error('__cancel');};
+  try{
+    convProgress(.02,tr('cvPreparing'));
+    const libs=[];if(fmt!=='txt')libs.push(loadLib('jszip'));
+    const bytes=await buildPdf();check();
+    await Promise.all(libs);if(fmt==='pptx')await loadLib('pptx');check();
+    doc=await pdfjs.getDocument({data:bytes,isEvalSupported:false,useSystemFonts:true}).promise;
+    if(!nums)nums=Array.from({length:doc.numPages},(_,i)=>i+1);
+    const base=(fileName||'document.pdf').replace(/\.pdf$/i,'');const snap=(h,m)=>snapOffice(h,m);
+    const step=(i)=>{check();convProgress(.05+.85*i/nums.length,tr('cvPage',i+1,nums.length));};
+    let blob,name;
+    if(fmt==='docx'){
+      const pms=[];
+      for(let i=0;i<nums.length;i++){step(i);const pg=await doc.getPage(nums[i]);
+        const a=await analyzePage(pdfjs,pg,{makeCanvas:mkCanvas,scale:2,colors:true,images:o.images,snap});
+        const pm={W:a.W,H:a.H,lines:buildLines(a.items),images:a.images,imageBlocks:[]};
+        if(o.images){
+          for(const r of a.images){const c=mkCanvas(Math.max(1,Math.round(r.w*a.scale)),Math.max(1,Math.round(r.h*a.scale)));c.getContext('2d').drawImage(a.canvas,r.x*a.scale,r.y*a.scale,r.w*a.scale,r.h*a.scale,0,0,c.width,c.height);
+            const big=c.width*c.height>250000;pm.imageBlocks.push({...r,data:await blobBytes(await toBlob(c,big?'image/jpeg':'image/png',.9)),ext:big?'jpeg':'png'});}
+          if(!pm.lines.length){pm.pageImage={w:a.W*.9,h:a.H*.9,data:await blobBytes(await toBlob(a.canvas,'image/jpeg',.88)),ext:'jpeg'};}
+        }
+        pms.push(pm);pg.cleanup();
+      }
+      convProgress(.93,tr('cvPacking'));blob=await writeDocx(docxModel(pms,{images:o.images}));name=base+'.docx';
+    }else if(fmt==='xlsx'){
+      const pms=[];for(let i=0;i<nums.length;i++){step(i);const pg=await doc.getPage(nums[i]);const a=await analyzePage(pdfjs,pg,{makeCanvas:mkCanvas,colors:false,images:false});pms.push({n:nums[i],W:a.W,lines:buildLines(a.items)});pg.cleanup();}
+      if(!pms.some(p=>p.lines.length))throw new Error(tr('cvNoText'));
+      const style=detectNumStyle(pms.flatMap(p=>p.lines.flatMap(l=>l.items.map(it=>it.str))));
+      const toSheet=(grid)=>{const widths=[];const rows=grid.map(r=>r.map((c,ci)=>{if(!c)return null;widths[ci]=Math.max(widths[ci]||8,Math.min(60,c.text.length*1.1+2));const n=parseNum(c.text,style);return n?{v:n.v,num:1,fmt:n.fmt,b:c.b}:{v:c.text,b:c.b};}));return{rows,widths};};
+      let sheets;
+      if(o.sheets==='one'){const all={rows:[],widths:[]};for(const p of pms){const sh=toSheet(tableModel(p.lines,p.W));if(all.rows.length)all.rows.push([]);all.rows.push(...sh.rows);sh.widths.forEach((w,i)=>all.widths[i]=Math.max(all.widths[i]||0,w||0));}
+        for(let i=0;i<all.widths.length;i++)all.widths[i]=all.widths[i]||8;sheets=[{name:base.slice(0,31)||'Sheet1',...all}];}
+      else sheets=pms.map(p=>{const sh=toSheet(tableModel(p.lines,p.W));for(let i=0;i<sh.widths.length;i++)sh.widths[i]=sh.widths[i]||8;return{name:tr('cvSheetName',p.n),...sh};});
+      convProgress(.93,tr('cvPacking'));blob=await writeXlsx(sheets);name=base+'.xlsx';
+    }else if(fmt==='pptx'){
+      const P=new window.PptxGenJS();let first=null;
+      for(let i=0;i<nums.length;i++){step(i);const pg=await doc.getPage(nums[i]);
+        const edit=o.ppt==='edit';const a=await analyzePage(pdfjs,pg,{makeCanvas:mkCanvas,scale:2,colors:edit,images:!edit,textless:edit,snap});
+        if(!first){first=a;P.defineLayout({name:'PDFPAGE',width:a.W/72,height:a.H/72});P.layout='PDFPAGE';}
+        const sl=P.addSlide();const bgc=edit?a.bgCanvas:a.canvas;sl.background={data:bgc.toDataURL('image/jpeg',.9).replace(/^data:/,'')};
+        if(edit){const lines=buildLines(a.items);
+          if(!lines.length){sl.background={data:a.canvas.toDataURL('image/jpeg',.9).replace(/^data:/,'')};}
+          for(const l of lines)for(const sg of l.segs){sl.addText(sg.runs.map(r=>({text:r.t,options:{fontFace:r.font,fontSize:r.sz,bold:r.b,italic:r.i,color:r.color}})),
+            {x:sg.x0/72,y:(l.top-l.fh*.12)/72,w:Math.min((a.W-sg.x0)/72,((sg.x1-sg.x0)*1.06+l.fh)/72),h:(l.fh*1.35)/72,margin:0,valign:'top',fit:'none',wrap:false,paraSpaceBefore:0,paraSpaceAfter:0});}}
+        pg.cleanup();
+      }
+      convProgress(.93,tr('cvPacking'));blob=await P.write({outputType:'blob'});name=base+'.pptx';
+    }else if(fmt==='jpg'||fmt==='png'){
+      const mime=fmt==='jpg'?'image/jpeg':'image/png';const files=[];
+      for(let i=0;i<nums.length;i++){step(i);const pg=await doc.getPage(nums[i]);let sc=o.dpi/72;const vp0=pg.getViewport({scale:1});sc=Math.min(sc,8000/Math.max(vp0.width,vp0.height));
+        const vp=pg.getViewport({scale:sc});const c=mkCanvas(Math.round(vp.width),Math.round(vp.height));const ctx=c.getContext('2d');ctx.fillStyle='#fff';ctx.fillRect(0,0,c.width,c.height);
+        await pg.render({canvasContext:ctx,viewport:vp}).promise;files.push({n:nums[i],blob:await toBlob(c,mime,.92)});pg.cleanup();}
+      if(files.length===1){blob=files[0].blob;name=`${base}-${files[0].n}.${fmt}`;}
+      else{convProgress(.93,tr('cvPacking'));const z=new JSZip();const pad=String(Math.max(...nums)).length;for(const f of files)z.file(`${base}-${String(f.n).padStart(Math.max(pad,2),'0')}.${fmt}`,f.blob);blob=await z.generateAsync({type:'blob'});name=`${base}-${fmt}.zip`;}
+    }else{
+      const out=[];
+      for(let i=0;i<nums.length;i++){step(i);const pg=await doc.getPage(nums[i]);const a=await analyzePage(pdfjs,pg,{makeCanvas:mkCanvas,colors:false,images:false});
+        const lines=buildLines(a.items);const box={L:Math.min(...lines.map(l=>l.x0),72),R:Math.max(...lines.map(l=>l.x1),a.W-72)};
+        out.push(buildParas(lines,box).map(p=>p.runs.map(r=>r.t).join('').trim()).join('\n\n'));pg.cleanup();}
+      if(!out.some(t=>t.trim()))throw new Error(tr('cvNoText'));
+      blob=new Blob(['﻿'+out.join('\n\n\f\n\n')],{type:'text/plain;charset=utf-8'});name=base+'.txt';
+    }
+    convProgress(1,tr('cvDone',name));
+    const ok=await offerFile(name,blob);
+    if(ok)setTimeout(()=>{if(!conv.busy)$('#convModal').hidden=true;},700);
+  }catch(e){
+    if(e&&e.message==='__cancel'){$('#convProgWrap').hidden=true;say(tr('cvCancelled'));}
+    else{console.error(e);$('#convErr').textContent=tr('cvFail',(e&&e.message)||e);}
+  }finally{
+    conv.busy=false;conv.abort=false;$('#convGo').disabled=false;
+    if(doc)try{doc.destroy();}catch(_){}
+  }
+}
+function bindConvert(){
+  const m=$('#convModal');
+  m.addEventListener('click',e=>{
+    if(e.target===m){closeConvert();return;}
+    const b=e.target.closest('button');if(!b)return;
+    if(b.dataset.fmt){if(conv.busy)return;conv.fmt=b.dataset.fmt;renderConvOpts();m.querySelector(`[data-fmt="${conv.fmt}"]`).focus();return;}
+    if(b.id==='convGo')return runConvert();
+    if(b.id==='convCancel'||b.id==='convClose')return closeConvert();
+  });
+  m.addEventListener('change',e=>{const t=e.target;
+    if(t.name==='cvRangeMode'){conv.range=t.value;$('#cvRange').hidden=conv.range!=='custom';if(conv.range==='custom')$('#cvRange').focus();}
+    if(t.id==='cvImages')conv.opts.images=t.checked;if(t.id==='cvSheets')conv.opts.sheets=t.value;if(t.id==='cvPpt')conv.opts.ppt=t.value;if(t.id==='cvDpi')conv.opts.dpi=+t.value;});
+  $('#convFmts').addEventListener('keydown',e=>{if(!/Arrow/.test(e.key)||conv.busy)return;e.preventDefault();const ks=CONV_FORMATS.map(f=>f.k);let i=ks.indexOf(conv.fmt);i=(i+(/Right|Down/.test(e.key)?1:ks.length-1))%ks.length;conv.fmt=ks[i];renderConvOpts();m.querySelector(`[data-fmt="${conv.fmt}"]`).focus();});
+  $('#cvRange').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();runConvert();}});
+  $('#convBtn').onclick=openConvert;
+}
+
 /* ---------- signatures ---------- */
 let sigs=[],armedSig=null,pendingSigPos=null;
 try{const v=JSON.parse(localStorage.getItem('pdfbench.sigs')||'[]');if(Array.isArray(v))sigs=v.filter(g=>g&&g.url&&g.id);}catch(_){}
@@ -1153,6 +1612,7 @@ document.addEventListener('keydown',e=>{
   if(sel&&(e.key==='Delete'||e.key==='Backspace')){e.preventDefault();deleteSel();return;}
   if(sel&&/^Arrow/.test(e.key)){e.preventDefault();const o=findObj(sel.pid,sel.oid);if(!o)return;const s=e.shiftKey?10:1;const prev=snap();if(e.key==='ArrowLeft')o.x-=s;if(e.key==='ArrowRight')o.x+=s;if(e.key==='ArrowUp')o.y-=s;if(e.key==='ArrowDown')o.y+=s;drawObjs(pById(sel.pid));record(prev);renderProps();return;}
   if(!$('#sigModal').hidden){if(e.key==='Escape'){e.preventDefault();closeSig();}return;}
+  if(!$('#convModal').hidden){if(e.key==='Escape'){e.preventDefault();closeConvert();}return;}
   if(e.key==='Escape'&&pickFor){pickFor=null;app.classList.remove('picking');renderProps();say(tr('ready'));return;}
   if(e.key==='Escape'){if(sel){sel=null;pages.forEach(drawObjs);renderProps();}else setTool('select');}
   const map={v:'select',e:'edit',t:'text',w:'whiteout',h:'highlight',r:'rect',o:'ellipse',d:'draw'};
@@ -1249,16 +1709,7 @@ async function savePdf(){
   try{bytes=await buildPdf();}catch(e){console.error(e);busy(false);say(tr('buildFail',e.message||e),true);return;}
   busy(false);
   const name=(fileName||'document.pdf').replace(/\.pdf$/i,'')+'-edited.pdf';
-  const blob=new Blob([bytes],{type:'application/pdf'});
-  const d=await getDownloads();
-  if(d){
-    try{await d.save({filename:name,data:blob});say(tr('saved',name,(bytes.length/1024).toFixed(0)));}
-    catch(e){const c=e&&e.code;say(c==='declined'?tr('declined'):c==='rate_limited'?tr('rateLim'):tr('saveFail'),true);}
-    return;
-  }
-  if(window.claude){say(tr('noDl'),true);return;}
-  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove();},2000);
-  say(tr('created',name));
+  await offerFile(name,new Blob([bytes],{type:'application/pdf'}));
 }
 $('#saveBtn').onclick=savePdf;
 
@@ -1297,7 +1748,7 @@ function setLang(v){
   applyStatic();buildTools();if(pages.length)buildThumbs();renderProps();updStatus();$('#stMsg').textContent=tr('ready');
 }
 $('#langSel').addEventListener('change',e=>setLang(e.target.value));
-applyStatic();bindSig();$('#stMsg').textContent=tr('ready');
+applyStatic();bindSig();bindConvert();$('#stMsg').textContent=tr('ready');
 buildTools();updUndo();setTool('select');
 (async()=>{
   if(!window.PDFLib||!pdfjs){say(tr('libFail'),true);return;}

@@ -13,6 +13,8 @@ that way; do not add any feature that sends document content to a server.
   - `js/pdf.min.js`, `js/pdf.worker.min.js`: pdf.js 3.11.174 (UMD, global `pdfjsLib`). Renders pages and extracts text.
   - `js/pdf-lib.min.js`: pdf-lib 1.17.1 (global `PDFLib`). Writes the output PDF.
   - `js/fontkit.umd.min.js`: @pdf-lib/fontkit 1.1.1 (global `fontkit`). Embeds TTF fonts.
+  - `js/jszip.min.js` (JSZip 3.10.1) and `js/pptxgen.min.js` (PptxGenJS 3.12.0): loaded on demand by the converter
+    (`loadLib`), never at page load.
   - `js/fonts.js`: `window.PB_FONTS`, base64 TTFs keyed `times` (Tinos), `helv` (Arimo), `calibri` (Carlito),
     `cour` (Cousine); regular/italic/bold/bold-italic, subset to Latin + Vietnamese. These are metric-compatible
     with Times New Roman, Arial, Calibri and Courier New, and the UI shows the Microsoft names.
@@ -47,6 +49,18 @@ that way; do not add any feature that sends document content to a server.
 - Checkbox and Symbols tools create `mark` objects (vector shapes from `markPrims()`: tick, cross, boxes, circles,
   star, arrow) exported with `drawSvgPath`, or text objects for text symbols (©, ₫, ≤ … all present in the
   embedded fonts). In the Checkbox tool, clicking an existing mark cycles its style.
+- Convert (top bar → dialog): the current edited document is rebuilt with `buildPdf()`, reopened with pdf.js and
+  converted page by page. Pipeline: `analyzePage()` (text items with font family from the PDF font name, ink colour
+  sampled from a render, image rectangles from the operator list, optional text-free background render by
+  disabling `fillText`) → `buildLines()` (runs, tabs, segments) → per format:
+  Word = `buildParas()` + `docxModel()` + `writeDocx()` (hand-written OOXML: paragraphs with alignment, indents,
+  spacing, tab stops, runs with font/size/bold/italic/colour, inline images);
+  Excel = `tableModel()` (tabular rows = several far-apart phrases; column edges = x ranges empty in ~all tabular
+  rows) + `parseNum()` (detects 1.234.567,89 vs 1,234,567.89) + `writeXlsx()`;
+  PowerPoint = PptxGenJS, text-free page background + one text box per line segment;
+  JPG/PNG = page renders (ZIP when several pages); Text = paragraphs in reading order.
+  Pure helpers (`analyzePage` … `writeXlsx`) have no DOM dependency apart from `makeCanvas`, so they can be tested
+  in Node with pdfjs-dist legacy + node-canvas + jszip.
 - Colour picker mirrors Word/Excel: theme colours (Office 2013–2022 exact Word table `WORD_O13`, Office 2023+
   computed), standard colours, recent colours, custom colour and an eyedropper (`pickFor`).
 - History: `snap()` / `record(prev)` store JSON snapshots of `pages` (undo/redo, max 200).
@@ -72,11 +86,12 @@ that way; do not add any feature that sends document content to a server.
 No automated tests yet. Before opening a PR:
 1. `cd public && python3 -m http.server 8080`, open http://localhost:8080.
 2. Open the sample document and one real PDF (ideally one with rotated pages).
-3. Try: Edit text on existing text, Add text with Vietnamese diacritics, signature (draw, type, upload),
+3. Convert a Word-made and an Excel-made PDF to each format and open the results in Word/Excel/PowerPoint.
+4. Try: Edit text on existing text, Add text with Vietnamese diacritics, signature (draw, type, upload),
    checkbox marks, symbols, whiteout, highlight, rectangle, draw, image, rotate/reorder/delete page, undo/redo, switch language, Save PDF.
-4. Open the saved PDF in a second viewer (Chrome and Acrobat/Preview) and check text position,
+5. Open the saved PDF in a second viewer (Chrome and Acrobat/Preview) and check text position,
    font, size, colour and that Vietnamese text is selectable.
-5. No errors in the browser console.
+6. No errors in the browser console.
 
 ## Deploy
 
