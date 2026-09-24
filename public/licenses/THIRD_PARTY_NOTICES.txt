@@ -1,0 +1,7 @@
+PDF Bench bundles the following open-source components:
+
+pdf.js 3.11.174 (Mozilla) ............ Apache License 2.0   https://github.com/mozilla/pdf.js
+pdf-lib 1.17.1 ........................ MIT License          https://github.com/Hopding/pdf-lib
+@pdf-lib/fontkit 1.1.1 ................ MIT License          https://github.com/Hopding/fontkit
+Arimo, Tinos, Cousine fonts (Google) .. Apache License 2.0   https://fonts.google.com
+  (subset to Latin and Vietnamese characters)
