@@ -40,6 +40,13 @@ that way; do not add any feature that sends document content to a server.
   `sampleColors()` reads the rendered canvas: background = most common colour around the run (used for the
   cover box, so shaded table cells keep their fill), ink = colour furthest from it, snapped to the Office palette.
   Original content is covered, not removed.
+- Signatures (`sign` tool): dialog with Draw / Type / Upload tabs builds a trimmed transparent PNG and inserts it
+  as an `image` object flagged `sig:true`. Typed signatures use Google Fonts (Dancing Script, Great Vibes, Caveat,
+  Pacifico; all have Vietnamese). Saved signatures live only in the viewer's localStorage (`pdfbench.sigs`) and only
+  when they tick "Remember on this device".
+- Checkbox and Symbols tools create `mark` objects (vector shapes from `markPrims()`: tick, cross, boxes, circles,
+  star, arrow) exported with `drawSvgPath`, or text objects for text symbols (©, ₫, ≤ … all present in the
+  embedded fonts). In the Checkbox tool, clicking an existing mark cycles its style.
 - Colour picker mirrors Word/Excel: theme colours (Office 2013–2022 exact Word table `WORD_O13`, Office 2023+
   computed), standard colours, recent colours, custom colour and an eyedropper (`pickFor`).
 - History: `snap()` / `record(prev)` store JSON snapshots of `pages` (undo/redo, max 200).
@@ -65,8 +72,8 @@ that way; do not add any feature that sends document content to a server.
 No automated tests yet. Before opening a PR:
 1. `cd public && python3 -m http.server 8080`, open http://localhost:8080.
 2. Open the sample document and one real PDF (ideally one with rotated pages).
-3. Try: Edit text on existing text, Add text with Vietnamese diacritics, whiteout, highlight,
-   rectangle, draw, image, rotate/reorder/delete page, undo/redo, switch language, Save PDF.
+3. Try: Edit text on existing text, Add text with Vietnamese diacritics, signature (draw, type, upload),
+   checkbox marks, symbols, whiteout, highlight, rectangle, draw, image, rotate/reorder/delete page, undo/redo, switch language, Save PDF.
 4. Open the saved PDF in a second viewer (Chrome and Acrobat/Preview) and check text position,
    font, size, colour and that Vietnamese text is selectable.
 5. No errors in the browser console.
